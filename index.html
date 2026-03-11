@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LinguaBot — AI Writing Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0c0c10;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #e8a96b;
+    --accent3: #5ecfb1;
+    --accent4: #e86b8f;
+    --text: #e8e8f0;
+    --text-muted: #7a7a9a;
+    --text-dim: #4a4a6a;
+    --bot-bubble: #1e1e2e;
+    --user-bubble: #2a2040;
+    --radius: 16px;
+    --radius-sm: 8px;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Lora', serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 100vh;
+    height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 20px;
+    gap: 8px;
+    overflow-y: auto;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent4));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  .logo-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .sidebar-section {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 12px 12px 6px;
+  }
+
+  .mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    width: 100%;
+    position: relative;
+  }
+
+  .mode-btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .mode-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .mode-btn.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 20%; bottom: 20%;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--accent);
+  }
+
+  .mode-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .mode-btn[data-mode="paraphrase"] .mode-icon { background: rgba(124,106,247,0.15); color: var(--accent); }
+  .mode-btn[data-mode="generate"] .mode-icon   { background: rgba(94,207,177,0.15); color: var(--accent3); }
+  .mode-btn[data-mode="tone"] .mode-icon        { background: rgba(232,169,107,0.15); color: var(--accent2); }
+  .mode-btn[data-mode="plagiarism"] .mode-icon  { background: rgba(232,107,143,0.15); color: var(--accent4); }
+
+  .mode-btn.active[data-mode="paraphrase"] { border-color: rgba(124,106,247,0.3); }
+  .mode-btn.active[data-mode="generate"]   { border-color: rgba(94,207,177,0.3); }
+  .mode-btn.active[data-mode="tone"]       { border-color: rgba(232,169,107,0.3); }
+  .mode-btn.active[data-mode="plagiarism"] { border-color: rgba(232,107,143,0.3); }
+
+  .mode-btn.active[data-mode="paraphrase"]::before { background: var(--accent); }
+  .mode-btn.active[data-mode="generate"]::before   { background: var(--accent3); }
+  .mode-btn.active[data-mode="tone"]::before       { background: var(--accent2); }
+  .mode-btn.active[data-mode="plagiarism"]::before { background: var(--accent4); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* ── Main ── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  .header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .header-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .header-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  .mode-badge {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  /* ── Chat area ── */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── Bubbles ── */
+  .bubble-row {
+    display: flex;
+    gap: 12px;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .bubble-row.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .avatar.bot {
+    background: linear-gradient(135deg, var(--accent), var(--accent4));
+    color: #fff;
+  }
+
+  .avatar.user {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .bubble {
+    max-width: 72%;
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    line-height: 1.7;
+    font-size: 0.9rem;
+    position: relative;
+  }
+
+  .bubble.bot {
+    background: var(--bot-bubble);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+
+  .bubble.user {
+    background: var(--user-bubble);
+    border: 1px solid rgba(124,106,247,0.25);
+    border-top-right-radius: 4px;
+    color: var(--text);
+  }
+
+  .bubble-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .bubble-content { white-space: pre-wrap; }
+
+  /* ── Copy button ── */
+  .copy-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    padding: 3px 7px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .bubble:hover .copy-btn { opacity: 1; }
+  .copy-btn:hover { color: var(--text); background: var(--border); }
+
+  /* ── Plagiarism result ── */
+  .plag-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-top: 12px;
+  }
+
+  .plag-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .plag-risk {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-left: auto;
+    font-weight: 400;
+  }
+
+  .risk-green  { background: rgba(94,207,177,0.15); color: var(--accent3); border: 1px solid rgba(94,207,177,0.3); }
+  .risk-yellow { background: rgba(232,169,107,0.15); color: var(--accent2); border: 1px solid rgba(232,169,107,0.3); }
+  .risk-orange { background: rgba(232,169,107,0.2);  color: var(--accent2); border: 1px solid rgba(232,169,107,0.4); }
+  .risk-red    { background: rgba(232,107,143,0.15); color: var(--accent4); border: 1px solid rgba(232,107,143,0.3); }
+
+  .plag-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+  .plag-summary {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .plag-stats {
+    display: flex; gap: 16px; flex-wrap: wrap;
+  }
+
+  .stat-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    flex: 1; min-width: 100px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  .originality-bar {
+    background: var(--bg);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .originality-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent4), var(--accent3));
+    transition: width 0.8s ease;
+  }
+
+  .matches-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .match-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+  }
+
+  .match-text { color: var(--text-muted); flex: 1; font-family: 'DM Mono', monospace; font-size: 0.7rem; }
+  .match-sim  { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem; color: var(--accent4); flex-shrink: 0; }
+
+  /* ── Typing indicator ── */
+  .typing {
+    display: flex; gap: 4px; align-items: center; padding: 4px 0;
+  }
+
+  .typing span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    animation: bounce 1.2s ease infinite;
+  }
+
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40%            { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* ── Welcome ── */
+  .welcome {
+    margin: auto;
+    text-align: center;
+    max-width: 400px;
+    padding: 40px 20px;
+  }
+
+  .welcome-orb {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent4));
+    margin: 0 auto 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 0 60px rgba(124,106,247,0.3);
+    animation: pulse 3s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 40px rgba(124,106,247,0.3); }
+    50%       { box-shadow: 0 0 80px rgba(124,106,247,0.5); }
+  }
+
+  .welcome h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .welcome p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .welcome-chips {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px;
+  }
+
+  .chip {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(124,106,247,0.08);
+  }
+
+  /* ── Input area ── */
+  .input-area {
+    padding: 16px 28px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .tone-selector {
+    display: none;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .tone-selector.visible { display: flex; }
+
+  .tone-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .tone-pill.active, .tone-pill:hover {
+    background: rgba(232,169,107,0.1);
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .input-wrap {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 0.2s;
+    overflow: hidden;
+  }
+
+  .input-wrap:focus-within { border-color: var(--accent); }
+
+  #chat-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Lora', serif;
+    font-size: 0.9rem;
+    padding: 14px 16px;
+    resize: none;
+    min-height: 50px;
+    max-height: 160px;
+    line-height: 1.6;
+  }
+
+  #chat-input::placeholder { color: var(--text-dim); font-style: italic; }
+
+  .send-btn {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover { background: #9080ff; transform: translateY(-1px); }
+  .send-btn:active { transform: translateY(0); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .input-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Scrollbar on sidebar */
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">✦</div>
+      Naqvi's
+    </div>
+    <div class="logo-sub">AI Writing Assistant</div>
+
+    <div class="sidebar-section">Features</div>
+
+    <button class="mode-btn active" data-mode="paraphrase" onclick="setMode('paraphrase')">
+      <div class="mode-icon">↺</div>
+      Paraphrase
+    </button>
+
+    <button class="mode-btn" data-mode="generate" onclick="setMode('generate')">
+      <div class="mode-icon">✦</div>
+      Generate
+    </button>
+
+    <button class="mode-btn" data-mode="tone" onclick="setMode('tone')">
+      <div class="mode-icon">◈</div>
+      Tone Adjust
+    </button>
+
+    <button class="mode-btn" data-mode="plagiarism" onclick="setMode('plagiarism')">
+      <div class="mode-icon">⊛</div>
+      Plagiarism Check
+    </button>
+
+    <div class="sidebar-footer">
+      LinguaBot v1.0<br>
+      Powered by Python NLP<br>
+      No external APIs used
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <div class="header" id="mode-header">
+      <div class="header-icon" id="header-icon" style="background:rgba(124,106,247,0.15);color:var(--accent)">↺</div>
+      <div>
+        <div class="header-title" id="header-title">Paraphrasing</div>
+        <div class="header-desc" id="header-desc">Rewrite text while preserving meaning</div>
+      </div>
+      <div class="mode-badge" id="mode-badge" style="color:var(--accent);border-color:rgba(124,106,247,0.3)">PARAPHRASE</div>
+    </div>
+
+    <div class="chat-area" id="chat-area">
+      <div class="welcome" id="welcome-screen">
+        <div class="welcome-orb">✦</div>
+        <h2>Hello, Writer.</h2>
+        <p>Choose a feature from the sidebar and start typing. I'll paraphrase, generate, adjust tone, or check plagiarism for you.</p>
+        <div class="welcome-chips">
+          <span class="chip" onclick="quickPrompt('Paraphrase: Technology has changed the world dramatically over the past decade.')">↺ Try Paraphrase</span>
+          <span class="chip" onclick="quickPrompt('Generate a paragraph about artificial intelligence.')">✦ Try Generate</span>
+          <span class="chip" onclick="quickPrompt('Make this formal: Hey, can you help me fix this?')">◈ Try Tone</span>
+          <span class="chip" onclick="quickPrompt('Check: Knowledge is power.')">⊛ Try Plagiarism</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="tone-selector" id="tone-selector">
+        <span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text-dim);align-self:center;letter-spacing:0.1em;">TONE:</span>
+        <button class="tone-pill active" data-tone="formal" onclick="setTone('formal')">Formal</button>
+        <button class="tone-pill" data-tone="casual" onclick="setTone('casual')">Casual</button>
+        <button class="tone-pill" data-tone="professional" onclick="setTone('professional')">Professional</button>
+      </div>
+
+      <div class="input-row">
+        <div class="input-wrap">
+          <textarea id="chat-input" placeholder="Type your message here…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        </div>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint" id="input-hint">Enter to send · Shift+Enter for new line</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  let currentMode = 'paraphrase';
+  let currentTone = 'formal';
+  let isLoading = false;
+
+  const modeConfig = {
+    paraphrase: {
+      icon: '↺',
+      iconBg: 'rgba(124,106,247,0.15)',
+      iconColor: 'var(--accent)',
+      title: 'Paraphrasing',
+      desc: 'Rewrite text while preserving meaning',
+      badge: 'PARAPHRASE',
+      badgeColor: 'var(--accent)',
+      badgeBorder: 'rgba(124,106,247,0.3)',
+      hint: 'Type or paste any text to paraphrase it',
+    },
+    generate: {
+      icon: '✦',
+      iconBg: 'rgba(94,207,177,0.15)',
+      iconColor: 'var(--accent3)',
+      title: 'Paragraph Generation',
+      desc: 'Generate rich paragraphs from any topic',
+      badge: 'GENERATE',
+      badgeColor: 'var(--accent3)',
+      badgeBorder: 'rgba(94,207,177,0.3)',
+      hint: 'Enter a topic (e.g. "climate change" or "artificial intelligence")',
+    },
+    tone: {
+      icon: '◈',
+      iconBg: 'rgba(232,169,107,0.15)',
+      iconColor: 'var(--accent2)',
+      title: 'Tone Adjustment',
+      desc: 'Rewrite text with a different tone',
+      badge: 'TONE',
+      badgeColor: 'var(--accent2)',
+      badgeBorder: 'rgba(232,169,107,0.3)',
+      hint: 'Select a tone above, then type your text to adjust',
+    },
+    plagiarism: {
+      icon: '⊛',
+      iconBg: 'rgba(232,107,143,0.15)',
+      iconColor: 'var(--accent4)',
+      title: 'Plagiarism Check',
+      desc: 'Evaluate content for potential plagiarism',
+      badge: 'PLAGIARISM',
+      badgeColor: 'var(--accent4)',
+      badgeBorder: 'rgba(232,107,143,0.3)',
+      hint: 'Paste any text to check for plagiarism',
+    },
+  };
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+
+    const cfg = modeConfig[mode];
+    const hi = document.getElementById('header-icon');
+    hi.textContent = cfg.icon;
+    hi.style.background = cfg.iconBg;
+    hi.style.color = cfg.iconColor;
+    document.getElementById('header-title').textContent = cfg.title;
+    document.getElementById('header-desc').textContent = cfg.desc;
+    const mb = document.getElementById('mode-badge');
+    mb.textContent = cfg.badge;
+    mb.style.color = cfg.badgeColor;
+    mb.style.borderColor = cfg.badgeBorder;
+    document.getElementById('input-hint').textContent = cfg.hint;
+
+    const ts = document.getElementById('tone-selector');
+    ts.classList.toggle('visible', mode === 'tone');
+
+    const placeholders = {
+      paraphrase: 'Paste your text here to paraphrase…',
+      generate: 'Enter a topic to generate a paragraph…',
+      tone: 'Type or paste text to adjust its tone…',
+      plagiarism: 'Paste text here to check for plagiarism…',
+    };
+    document.getElementById('chat-input').placeholder = placeholders[mode];
+  }
+
+  function setTone(tone) {
+    currentTone = tone;
+    document.querySelectorAll('.tone-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.tone === tone);
+    });
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function quickPrompt(text) {
+    document.getElementById('welcome-screen')?.remove();
+    const inp = document.getElementById('chat-input');
+    inp.value = text;
+    autoResize(inp);
+    inp.focus();
+  }
+
+  function addBubble(role, content, isHtml = false) {
+    document.getElementById('welcome-screen')?.remove();
+
+    const row = document.createElement('div');
+    row.className = `bubble-row ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = `avatar ${role}`;
+    avatar.textContent = role === 'bot' ? '✦' : 'U';
+
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${role}`;
+
+    if (role === 'bot') {
+      const label = document.createElement('div');
+      label.className = 'bubble-label';
+      label.textContent = modeConfig[currentMode].badge;
+      bubble.appendChild(label);
+    }
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'bubble-content';
+    if (isHtml) {
+      contentDiv.innerHTML = content;
+    } else {
+      contentDiv.textContent = content;
+    }
+    bubble.appendChild(contentDiv);
+
+    if (role === 'bot') {
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-btn';
+      copyBtn.textContent = 'copy';
+      copyBtn.onclick = () => {
+        const text = contentDiv.innerText || contentDiv.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          copyBtn.textContent = 'copied!';
+          setTimeout(() => copyBtn.textContent = 'copy', 1500);
+        });
+      };
+      bubble.appendChild(copyBtn);
+    }
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+
+    const chatArea = document.getElementById('chat-area');
+    chatArea.appendChild(row);
+    chatArea.scrollTop = chatArea.scrollHeight;
+    return bubble;
+  }
+
+  function addTyping() {
+    document.getElementById('welcome-screen')?.remove();
+    const row = document.createElement('div');
+    row.className = 'bubble-row bot';
+    row.id = 'typing-row';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar bot';
+    avatar.textContent = '✦';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble bot';
+    bubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    document.getElementById('chat-area').appendChild(row);
+    document.getElementById('chat-area').scrollTop = 9999;
+    return row;
+  }
+
+  function buildPlagiarismHtml(data) {
+    const riskClass = { None: 'risk-green', Low: 'risk-yellow', Moderate: 'risk-orange', High: 'risk-red' }[data.risk] || 'risk-green';
+
+    let matchesHtml = '';
+    if (data.matches && data.matches.length > 0) {
+      matchesHtml = `<div style="margin-top:8px">
+        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Similar Sources</div>
+        <div class="matches-list">
+          ${data.matches.map(m => `
+            <div class="match-item">
+              <div class="match-text">${m.source}</div>
+              <div class="match-sim">${m.similarity}%</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    return `<div class="plag-card">
+      <div class="plag-header">
+        <span>Analysis Result</span>
+        <span class="plag-risk ${riskClass}">${data.risk} Risk</span>
+      </div>
+      <div class="plag-body">
+        <div class="plag-summary">${data.summary}</div>
+        <div class="plag-stats">
+          <div class="stat-box">
+            <div class="stat-value">${data.originality_score}%</div>
+            <div class="stat-label">Originality</div>
+            <div class="originality-bar"><div class="originality-fill" style="width:${data.originality_score}%"></div></div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">${data.word_count}</div>
+            <div class="stat-label">Words</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">${data.unique_words}</div>
+            <div class="stat-label">Unique Words</div>
+          </div>
+        </div>
+        ${matchesHtml}
+      </div>
+    </div>`;
+  }
+
+  async function sendMessage() {
+    if (isLoading) return;
+    const inp = document.getElementById('chat-input');
+    const text = inp.value.trim();
+    if (!text) return;
+
+    inp.value = '';
+    inp.style.height = 'auto';
+    addBubble('user', text);
+
+    isLoading = true;
+    document.getElementById('send-btn').disabled = true;
+
+    const typingRow = addTyping();
+
+    try {
+      let url, body;
+
+      if (currentMode === 'paraphrase') {
+        url = '/api/paraphrase';
+        body = { text };
+      } else if (currentMode === 'generate') {
+        url = '/api/generate';
+        body = { topic: text };
+      } else if (currentMode === 'tone') {
+        url = '/api/tone';
+        body = { text, tone: currentTone };
+      } else if (currentMode === 'plagiarism') {
+        url = '/api/plagiarism';
+        body = { text };
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      typingRow.remove();
+
+      if (data.error) {
+        addBubble('bot', `⚠ ${data.error}`);
+      } else if (currentMode === 'plagiarism') {
+        const htmlContent = buildPlagiarismHtml(data);
+        addBubble('bot', htmlContent, true);
+      } else {
+        addBubble('bot', data.result);
+      }
+    } catch (err) {
+      typingRow.remove();
+      addBubble('bot', '⚠ Connection error. Make sure the Python server is running on port 5000.');
+    }
+
+    isLoading = false;
+    document.getElementById('send-btn').disabled = false;
+    inp.focus();
+  }
+</script>
+</body>
+</html>
