@@ -1,982 +1,907 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LinguaBot — AI Writing Assistant</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<title>LinguaBot — AI Writing Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Inconsolata:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #0c0c10;
-    --surface: #13131a;
-    --surface2: #1a1a24;
-    --border: #2a2a3a;
-    --accent: #7c6af7;
-    --accent2: #e8a96b;
-    --accent3: #5ecfb1;
-    --accent4: #e86b8f;
-    --text: #e8e8f0;
-    --text-muted: #7a7a9a;
-    --text-dim: #4a4a6a;
-    --bot-bubble: #1e1e2e;
-    --user-bubble: #2a2040;
-    --radius: 16px;
-    --radius-sm: 8px;
-  }
-
-  html, body {
-    height: 100%;
-    font-family: 'Lora', serif;
-    background: var(--bg);
-    color: var(--text);
-    overflow: hidden;
-  }
-
-  /* ── Layout ── */
-  .app {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    grid-template-rows: 100vh;
-    height: 100vh;
-  }
-
-  /* ── Sidebar ── */
-  .sidebar {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    padding: 28px 20px;
-    gap: 8px;
-    overflow-y: auto;
-  }
-
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 1.5rem;
-    color: var(--accent);
-    letter-spacing: -0.03em;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .logo-icon {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--accent), var(--accent4));
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem;
-  }
-
-  .logo-sub {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    font-weight: 300;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 20px;
-  }
-
-  .sidebar-section {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--text-dim);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    padding: 12px 12px 6px;
-  }
-
-  .mode-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: var(--radius-sm);
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'Syne', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-align: left;
-    width: 100%;
-    position: relative;
-  }
-
-  .mode-btn:hover {
-    background: var(--surface2);
-    color: var(--text);
-    border-color: var(--border);
-  }
-
-  .mode-btn.active {
-    background: var(--surface2);
-    color: var(--text);
-    border-color: var(--border);
-  }
-
-  .mode-btn.active::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 20%; bottom: 20%;
-    width: 3px;
-    border-radius: 0 3px 3px 0;
-    background: var(--accent);
-  }
-
-  .mode-icon {
-    width: 28px; height: 28px;
-    border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.9rem;
-    flex-shrink: 0;
-  }
-
-  .mode-btn[data-mode="paraphrase"] .mode-icon { background: rgba(124,106,247,0.15); color: var(--accent); }
-  .mode-btn[data-mode="generate"] .mode-icon   { background: rgba(94,207,177,0.15); color: var(--accent3); }
-  .mode-btn[data-mode="tone"] .mode-icon        { background: rgba(232,169,107,0.15); color: var(--accent2); }
-  .mode-btn[data-mode="plagiarism"] .mode-icon  { background: rgba(232,107,143,0.15); color: var(--accent4); }
-
-  .mode-btn.active[data-mode="paraphrase"] { border-color: rgba(124,106,247,0.3); }
-  .mode-btn.active[data-mode="generate"]   { border-color: rgba(94,207,177,0.3); }
-  .mode-btn.active[data-mode="tone"]       { border-color: rgba(232,169,107,0.3); }
-  .mode-btn.active[data-mode="plagiarism"] { border-color: rgba(232,107,143,0.3); }
-
-  .mode-btn.active[data-mode="paraphrase"]::before { background: var(--accent); }
-  .mode-btn.active[data-mode="generate"]::before   { background: var(--accent3); }
-  .mode-btn.active[data-mode="tone"]::before       { background: var(--accent2); }
-  .mode-btn.active[data-mode="plagiarism"]::before { background: var(--accent4); }
-
-  .sidebar-footer {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--text-dim);
-    line-height: 1.6;
-  }
-
-  /* ── Main ── */
-  .main {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  /* ── Header ── */
-  .header {
-    padding: 20px 28px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: var(--surface);
-    flex-shrink: 0;
-  }
-
-  .header-icon {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem;
-  }
-
-  .header-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
-
-  .header-desc {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-    margin-top: 2px;
-  }
-
-  .mode-badge {
-    margin-left: auto;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 20px;
-    border: 1px solid;
-  }
-
-  /* ── Chat area ── */
-  .chat-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    scroll-behavior: smooth;
-  }
-
-  .chat-area::-webkit-scrollbar { width: 4px; }
-  .chat-area::-webkit-scrollbar-track { background: transparent; }
-  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  /* ── Bubbles ── */
-  .bubble-row {
-    display: flex;
-    gap: 12px;
-    animation: fadeUp 0.3s ease both;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .bubble-row.user { flex-direction: row-reverse; }
-
-  .avatar {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 700;
-    font-family: 'Syne', sans-serif;
-  }
-
-  .avatar.bot {
-    background: linear-gradient(135deg, var(--accent), var(--accent4));
-    color: #fff;
-  }
-
-  .avatar.user {
-    background: var(--surface2);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-  }
-
-  .bubble {
-    max-width: 72%;
-    padding: 14px 18px;
-    border-radius: var(--radius);
-    line-height: 1.7;
-    font-size: 0.9rem;
-    position: relative;
-  }
-
-  .bubble.bot {
-    background: var(--bot-bubble);
-    border: 1px solid var(--border);
-    border-top-left-radius: 4px;
-    color: var(--text);
-  }
-
-  .bubble.user {
-    background: var(--user-bubble);
-    border: 1px solid rgba(124,106,247,0.25);
-    border-top-right-radius: 4px;
-    color: var(--text);
-  }
-
-  .bubble-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--text-dim);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .bubble-content { white-space: pre-wrap; }
-
-  /* ── Copy button ── */
-  .copy-btn {
-    position: absolute;
-    top: 8px; right: 8px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text-muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    padding: 3px 7px;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s;
-    letter-spacing: 0.05em;
-  }
-
-  .bubble:hover .copy-btn { opacity: 1; }
-  .copy-btn:hover { color: var(--text); background: var(--border); }
-
-  /* ── Plagiarism result ── */
-  .plag-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    margin-top: 12px;
-  }
-
-  .plag-header {
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Syne', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-  }
-
-  .plag-risk {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    padding: 3px 8px;
-    border-radius: 20px;
-    margin-left: auto;
-    font-weight: 400;
-  }
-
-  .risk-green  { background: rgba(94,207,177,0.15); color: var(--accent3); border: 1px solid rgba(94,207,177,0.3); }
-  .risk-yellow { background: rgba(232,169,107,0.15); color: var(--accent2); border: 1px solid rgba(232,169,107,0.3); }
-  .risk-orange { background: rgba(232,169,107,0.2);  color: var(--accent2); border: 1px solid rgba(232,169,107,0.4); }
-  .risk-red    { background: rgba(232,107,143,0.15); color: var(--accent4); border: 1px solid rgba(232,107,143,0.3); }
-
-  .plag-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
-
-  .plag-summary {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    line-height: 1.6;
-  }
-
-  .plag-stats {
-    display: flex; gap: 16px; flex-wrap: wrap;
-  }
-
-  .stat-box {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    flex: 1; min-width: 100px;
-    text-align: center;
-  }
-
-  .stat-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  .stat-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--text-dim);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-top: 3px;
-  }
-
-  .originality-bar {
-    background: var(--bg);
-    border-radius: 4px;
-    height: 6px;
-    overflow: hidden;
-    margin-top: 4px;
-  }
-
-  .originality-fill {
-    height: 100%;
-    border-radius: 4px;
-    background: linear-gradient(90deg, var(--accent4), var(--accent3));
-    transition: width 0.8s ease;
-  }
-
-  .matches-list { display: flex; flex-direction: column; gap: 6px; }
-
-  .match-item {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.8rem;
-  }
-
-  .match-text { color: var(--text-muted); flex: 1; font-family: 'DM Mono', monospace; font-size: 0.7rem; }
-  .match-sim  { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem; color: var(--accent4); flex-shrink: 0; }
-
-  /* ── Typing indicator ── */
-  .typing {
-    display: flex; gap: 4px; align-items: center; padding: 4px 0;
-  }
-
-  .typing span {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--text-dim);
-    animation: bounce 1.2s ease infinite;
-  }
-
-  .typing span:nth-child(2) { animation-delay: 0.2s; }
-  .typing span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes bounce {
-    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-    40%            { transform: translateY(-6px); opacity: 1; }
-  }
-
-  /* ── Welcome ── */
-  .welcome {
-    margin: auto;
-    text-align: center;
-    max-width: 400px;
-    padding: 40px 20px;
-  }
-
-  .welcome-orb {
-    width: 80px; height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent4));
-    margin: 0 auto 24px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2rem;
-    box-shadow: 0 0 60px rgba(124,106,247,0.3);
-    animation: pulse 3s ease infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 40px rgba(124,106,247,0.3); }
-    50%       { box-shadow: 0 0 80px rgba(124,106,247,0.5); }
-  }
-
-  .welcome h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 800;
-    margin-bottom: 10px;
-    background: linear-gradient(135deg, var(--text), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .welcome p {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    line-height: 1.7;
-  }
-
-  .welcome-chips {
-    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px;
-  }
-
-  .chip {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    padding: 5px 12px;
-    border-radius: 20px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .chip:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(124,106,247,0.08);
-  }
-
-  /* ── Input area ── */
-  .input-area {
-    padding: 16px 28px 20px;
-    border-top: 1px solid var(--border);
-    background: var(--surface);
-    flex-shrink: 0;
-  }
-
-  .tone-selector {
-    display: none;
-    gap: 6px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-  }
-
-  .tone-selector.visible { display: flex; }
-
-  .tone-pill {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    padding: 5px 12px;
-    border-radius: 20px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.05em;
-  }
-
-  .tone-pill.active, .tone-pill:hover {
-    background: rgba(232,169,107,0.1);
-    border-color: var(--accent2);
-    color: var(--accent2);
-  }
-
-  .input-row {
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-  }
-
-  .input-wrap {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    transition: border-color 0.2s;
-    overflow: hidden;
-  }
-
-  .input-wrap:focus-within { border-color: var(--accent); }
-
-  #chat-input {
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-family: 'Lora', serif;
-    font-size: 0.9rem;
-    padding: 14px 16px;
-    resize: none;
-    min-height: 50px;
-    max-height: 160px;
-    line-height: 1.6;
-  }
-
-  #chat-input::placeholder { color: var(--text-dim); font-style: italic; }
-
-  .send-btn {
-    width: 48px; height: 48px;
-    border-radius: 12px;
-    border: none;
-    background: var(--accent);
-    color: #fff;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-
-  .send-btn:hover { background: #9080ff; transform: translateY(-1px); }
-  .send-btn:active { transform: translateY(0); }
-  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  .input-hint {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--text-dim);
-    margin-top: 8px;
-    letter-spacing: 0.05em;
-  }
-
-  /* Scrollbar on sidebar */
-  .sidebar::-webkit-scrollbar { width: 3px; }
-  .sidebar::-webkit-scrollbar-track { background: transparent; }
-  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root {
+  --ink:      #0d0d0d;
+  --ink2:     #161616;
+  --ink3:     #202020;
+  --ink4:     #2c2c2c;
+  --gold:     #d4a843;
+  --coral:    #ff4f5e;
+  --mint:     #00e8b0;
+  --lavender: #b088f9;
+  --paper:    #f0ece4;
+  --paper2:   #d8d2c8;
+  --smoke:    #8a8a8a;
+  --dim:      #4a4a4a;
+  --r:        12px;
+}
+
+html,body{height:100%;background:var(--ink);color:var(--paper);font-family:'Outfit',sans-serif;overflow:hidden;}
+
+/* ── 3-COLUMN LAYOUT ── */
+.shell{
+  display:grid;
+  grid-template-columns:68px 256px 1fr;
+  height:100vh;
+  overflow:hidden;
+}
+
+/* ─────────────────── SPINE ─────────────────── */
+.spine{
+  background:var(--ink2);
+  border-right:1px solid var(--ink4);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:20px 0 16px;
+  gap:8px;
+}
+
+.spine-logo{
+  width:38px;height:38px;
+  background:linear-gradient(135deg,var(--gold),var(--coral));
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:18px;
+  box-shadow:0 4px 18px rgba(212,168,67,0.3);
+  flex-shrink:0;
+}
+
+.spine-dot{
+  width:9px;height:9px;
+  border-radius:50%;
+  background:var(--ink4);
+  cursor:pointer;
+  transition:all 0.25s;
+  border:1.5px solid transparent;
+}
+.spine-dot:hover{background:var(--smoke);}
+.spine-dot.on{border-color:transparent;}
+.spine-dot[data-m="paraphrase"].on{background:var(--gold);     box-shadow:0 0 10px rgba(212,168,67,0.7);}
+.spine-dot[data-m="generate"].on  {background:var(--mint);     box-shadow:0 0 10px rgba(0,232,176,0.7);}
+.spine-dot[data-m="tone"].on      {background:var(--coral);    box-shadow:0 0 10px rgba(255,79,94,0.7);}
+.spine-dot[data-m="plagiarism"].on{background:var(--lavender); box-shadow:0 0 10px rgba(176,136,249,0.7);}
+
+.spine-label{
+  writing-mode:vertical-rl;
+  transform:rotate(180deg);
+  font-family:'Inconsolata',monospace;
+  font-size:0.55rem;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-top:auto;
+  padding-bottom:4px;
+}
+
+/* ─────────────────── SIDEBAR ─────────────────── */
+.sidebar{
+  background:var(--ink2);
+  border-right:1px solid var(--ink4);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  position:relative;
+}
+
+/* Subtle horizontal rule texture */
+.sidebar::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(
+    180deg,
+    transparent,transparent 31px,
+    rgba(255,255,255,0.018) 31px,rgba(255,255,255,0.018) 32px
+  );
+  pointer-events:none;
+  z-index:0;
+}
+
+.sb-head{
+  padding:26px 22px 18px;
+  border-bottom:1px solid var(--ink4);
+  position:relative;z-index:1;
+}
+
+.sb-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.65rem;
+  font-weight:600;
+  letter-spacing:-0.01em;
+  color:var(--paper);
+  line-height:1;
+}
+
+.sb-sub{
+  font-family:'Inconsolata',monospace;
+  font-size:0.58rem;
+  color:var(--dim);
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  margin-top:5px;
+}
+
+.sb-cat{
+  font-family:'Inconsolata',monospace;
+  font-size:0.55rem;
+  color:var(--dim);
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  padding:18px 22px 7px;
+  position:relative;z-index:1;
+}
+
+.nb{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 22px;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  width:100%;
+  text-align:left;
+  transition:all 0.18s;
+  position:relative;
+  z-index:1;
+  border-left:3px solid transparent;
+  outline:none;
+}
+.nb:hover{background:rgba(255,255,255,0.03);}
+.nb.on{background:rgba(255,255,255,0.04);}
+.nb[data-m="paraphrase"].on{border-left-color:var(--gold);}
+.nb[data-m="generate"].on  {border-left-color:var(--mint);}
+.nb[data-m="tone"].on      {border-left-color:var(--coral);}
+.nb[data-m="plagiarism"].on{border-left-color:var(--lavender);}
+
+.ni{
+  width:32px;height:32px;
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  transition:transform 0.2s;
+}
+.nb.on .ni{transform:scale(1.1);}
+.nb[data-m="paraphrase"] .ni{background:rgba(212,168,67,0.13);color:var(--gold);}
+.nb[data-m="generate"]   .ni{background:rgba(0,232,176,0.13); color:var(--mint);}
+.nb[data-m="tone"]        .ni{background:rgba(255,79,94,0.13); color:var(--coral);}
+.nb[data-m="plagiarism"]  .ni{background:rgba(176,136,249,0.13);color:var(--lavender);}
+
+.nl{
+  font-family:'Outfit',sans-serif;
+  font-size:0.8rem;
+  font-weight:500;
+  color:var(--smoke);
+  transition:color 0.18s;
+  flex:1;
+}
+.nb:hover .nl,.nb.on .nl{color:var(--paper);}
+
+.na{color:var(--dim);font-size:0.7rem;opacity:0;transition:opacity 0.18s;}
+.nb.on .na{opacity:1;}
+
+/* Session stats */
+.sb-foot{
+  margin-top:auto;
+  padding:18px 22px;
+  border-top:1px solid var(--ink4);
+  position:relative;z-index:1;
+}
+
+.sf-title{
+  font-family:'Inconsolata',monospace;
+  font-size:0.55rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-bottom:10px;
+}
+
+.sf-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+}
+
+.sf-key{
+  font-family:'Inconsolata',monospace;
+  font-size:0.6rem;
+  color:var(--dim);
+}
+
+.sf-val{
+  font-family:'Cormorant Garamond',serif;
+  font-size:0.95rem;
+  font-weight:700;
+  color:var(--gold);
+}
+
+.sf-bar{
+  height:2px;
+  background:var(--ink4);
+  border-radius:1px;
+  overflow:hidden;
+  margin-bottom:10px;
+}
+.sf-fill{
+  height:100%;
+  border-radius:1px;
+  background:linear-gradient(90deg,var(--gold),var(--coral));
+  width:0%;
+  transition:width 0.8s ease;
+}
+
+/* ─────────────────── MAIN ─────────────────── */
+.main{
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  background:var(--ink);
+  position:relative;
+}
+
+/* Ambient mood blobs */
+.blob{
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+  filter:blur(80px);
+  transition:background 0.6s ease;
+}
+.blob-a{top:-15%;right:-8%; width:440px;height:440px;background:radial-gradient(circle,rgba(212,168,67,0.07),transparent 70%);}
+.blob-b{bottom:-18%;left:-5%;width:360px;height:360px;background:radial-gradient(circle,rgba(255,79,94,0.06),transparent 70%);}
+
+/* ── TOP BAR ── */
+.topbar{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:16px 30px;
+  border-bottom:1px solid var(--ink4);
+  background:rgba(13,13,13,0.88);
+  backdrop-filter:blur(16px);
+  flex-shrink:0;
+  position:relative;z-index:5;
+}
+
+.tb-icon{
+  width:36px;height:36px;
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.3s;
+}
+
+.tb-info{flex:1;}
+
+.tb-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.2rem;
+  font-weight:600;
+  color:var(--paper);
+  line-height:1;
+}
+
+.tb-desc{
+  font-family:'Inconsolata',monospace;
+  font-size:0.58rem;
+  color:var(--dim);
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  margin-top:3px;
+}
+
+.tb-badge{
+  font-family:'Inconsolata',monospace;
+  font-size:0.56rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  font-weight:600;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1px solid;
+}
+
+/* ── TONE BAR ── */
+.tonebar{
+  display:none;
+  align-items:center;
+  gap:6px;
+  padding:9px 30px;
+  border-bottom:1px solid var(--ink4);
+  background:rgba(13,13,13,0.5);
+  flex-wrap:wrap;
+}
+.tonebar.on{display:flex;}
+
+.tone-lbl{
+  font-family:'Inconsolata',monospace;
+  font-size:0.58rem;
+  color:var(--dim);
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  margin-right:4px;
+}
+
+.tp{
+  font-family:'Inconsolata',monospace;
+  font-size:0.6rem;
+  letter-spacing:0.08em;
+  padding:4px 12px;
+  border-radius:20px;
+  background:var(--ink3);
+  border:1px solid var(--ink4);
+  color:var(--smoke);
+  cursor:pointer;
+  transition:all 0.18s;
+}
+.tp:hover,.tp.on{background:rgba(255,79,94,0.13);border-color:var(--coral);color:var(--coral);}
+
+/* ── CHAT ── */
+.chat{
+  flex:1;
+  overflow-y:auto;
+  padding:28px 36px;
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+  position:relative;z-index:1;
+}
+.chat::-webkit-scrollbar{width:3px;}
+.chat::-webkit-scrollbar-track{background:transparent;}
+.chat::-webkit-scrollbar-thumb{background:var(--ink4);border-radius:2px;}
+
+/* ── WELCOME ── */
+.welcome{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;flex:1;text-align:center;
+  padding:32px 16px;
+  animation:wu 0.55s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes wu{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.w-orb{
+  width:86px;height:86px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--coral));
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 26px;
+  box-shadow:0 0 0 14px rgba(212,168,67,0.07),0 0 50px rgba(212,168,67,0.22);
+  animation:breathe 4s ease infinite;
+}
+@keyframes breathe{
+  0%,100%{box-shadow:0 0 0 14px rgba(212,168,67,0.07),0 0 40px rgba(212,168,67,0.18);}
+  50%    {box-shadow:0 0 0 22px rgba(212,168,67,0.04),0 0 80px rgba(212,168,67,0.32);}
+}
+
+.w-h{
+  font-family:'Cormorant Garamond',serif;
+  font-size:2.7rem;font-weight:300;font-style:italic;
+  line-height:1.1;margin-bottom:10px;
+  background:linear-gradient(135deg,var(--paper) 40%,var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+.w-p{
+  font-family:'Outfit',sans-serif;font-size:0.87rem;
+  color:var(--smoke);line-height:1.75;max-width:360px;font-weight:300;
+}
+
+.w-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:10px;margin-top:26px;max-width:460px;width:100%;
+}
+
+.wcard{
+  background:var(--ink2);border:1px solid var(--ink4);
+  border-radius:var(--r);padding:13px 15px;
+  cursor:pointer;transition:all 0.22s;
+  text-align:left;display:flex;align-items:flex-start;gap:10px;
+}
+.wcard:hover{background:var(--ink3);transform:translateY(-2px);}
+.wcard[data-m="paraphrase"]:hover{border-color:rgba(212,168,67,0.45);}
+.wcard[data-m="generate"]:hover  {border-color:rgba(0,232,176,0.45);}
+.wcard[data-m="tone"]:hover      {border-color:rgba(255,79,94,0.45);}
+.wcard[data-m="plagiarism"]:hover{border-color:rgba(176,136,249,0.45);}
+
+.wci{
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;
+}
+.wcard[data-m="paraphrase"] .wci{background:rgba(212,168,67,0.15);color:var(--gold);}
+.wcard[data-m="generate"]   .wci{background:rgba(0,232,176,0.15); color:var(--mint);}
+.wcard[data-m="tone"]        .wci{background:rgba(255,79,94,0.15); color:var(--coral);}
+.wcard[data-m="plagiarism"]  .wci{background:rgba(176,136,249,0.15);color:var(--lavender);}
+
+.wct{font-family:'Outfit',sans-serif;font-size:0.77rem;font-weight:600;color:var(--paper);margin-bottom:2px;}
+.wch{font-family:'Inconsolata',monospace;font-size:0.6rem;color:var(--dim);line-height:1.5;}
+
+/* ── MESSAGES ── */
+.row{display:flex;gap:13px;animation:su 0.32s cubic-bezier(0.16,1,0.3,1) both;}
+.row.user{flex-direction:row-reverse;}
+@keyframes su{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.av{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:3px;
+}
+.av.bot{background:linear-gradient(135deg,var(--gold),var(--coral));color:#000;box-shadow:0 0 12px rgba(212,168,67,0.3);}
+.av.user{background:var(--ink3);color:var(--smoke);border:1px solid var(--ink4);}
+
+.bub{
+  max-width:70%;border-radius:var(--r);
+  padding:13px 18px;font-size:0.87rem;
+  line-height:1.75;position:relative;
+}
+.bub.bot{
+  background:var(--ink2);
+  border:1px solid var(--ink4);
+  border-top-left-radius:4px;
+  color:var(--paper);
+}
+.bub.user{
+  background:var(--ink3);
+  border:1px solid var(--ink4);
+  border-top-right-radius:4px;
+  color:var(--paper);
+}
+
+.btag{
+  font-family:'Inconsolata',monospace;
+  font-size:0.56rem;letter-spacing:0.2em;
+  text-transform:uppercase;font-weight:600;
+  margin-bottom:7px;opacity:0.75;
+}
+.btxt{white-space:pre-wrap;font-family:'Outfit',sans-serif;font-weight:300;}
+
+.cpbtn{
+  position:absolute;top:9px;right:9px;
+  background:var(--ink3);border:1px solid var(--ink4);
+  border-radius:5px;color:var(--dim);
+  font-family:'Inconsolata',monospace;font-size:0.56rem;
+  padding:3px 7px;cursor:pointer;opacity:0;
+  transition:all 0.15s;letter-spacing:0.05em;
+}
+.bub:hover .cpbtn{opacity:1;}
+.cpbtn:hover{color:var(--paper);background:var(--ink4);}
+
+/* ── TYPING ── */
+.tdots{display:flex;gap:5px;align-items:center;padding:3px 0;}
+.tdots span{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--ink4);
+  animation:db 1.3s ease infinite;
+}
+.tdots span:nth-child(2){animation-delay:.18s;}
+.tdots span:nth-child(3){animation-delay:.36s;}
+@keyframes db{0%,80%,100%{transform:scale(0.7);opacity:0.4;}40%{transform:scale(1.2);opacity:1;}}
+
+/* ── PLAGIARISM CARD ── */
+.pc{background:var(--ink3);border:1px solid var(--ink4);border-radius:var(--r);overflow:hidden;margin-top:10px;}
+.pc-head{
+  padding:11px 15px;border-bottom:1px solid var(--ink4);
+  display:flex;align-items:center;gap:9px;
+  font-family:'Outfit',sans-serif;font-size:0.78rem;font-weight:600;color:var(--paper);
+}
+.pc-badge{
+  margin-left:auto;font-family:'Inconsolata',monospace;
+  font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;
+}
+.rg{background:rgba(0,232,176,0.12);color:var(--mint);    border:1px solid rgba(0,232,176,0.35);}
+.ry{background:rgba(212,168,67,0.12);color:var(--gold);   border:1px solid rgba(212,168,67,0.35);}
+.ro{background:rgba(255,79,94,0.12); color:var(--coral);  border:1px solid rgba(255,79,94,0.35);}
+.rr{background:rgba(176,136,249,0.12);color:var(--lavender);border:1px solid rgba(176,136,249,0.35);}
+
+.pc-body{padding:13px 15px;display:flex;flex-direction:column;gap:11px;}
+.pc-sum{font-family:'Outfit',sans-serif;font-size:0.8rem;color:var(--smoke);line-height:1.6;}
+.pc-metrics{display:flex;gap:8px;}
+.met{
+  flex:1;background:var(--ink2);border:1px solid var(--ink4);
+  border-radius:9px;padding:9px 11px;text-align:center;
+}
+.mv{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:700;color:var(--paper);line-height:1;}
+.ml{font-family:'Inconsolata',monospace;font-size:0.56rem;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;margin-top:3px;}
+.pbar{height:3px;background:var(--ink4);border-radius:2px;overflow:hidden;margin-top:5px;}
+.pfill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--mint));transition:width 1s ease;}
+.mlist{display:flex;flex-direction:column;gap:5px;}
+.mrow{
+  background:var(--ink2);border:1px solid var(--ink4);
+  border-radius:8px;padding:7px 11px;
+  display:flex;align-items:center;gap:9px;
+}
+.msrc{font-family:'Inconsolata',monospace;font-size:0.66rem;color:var(--smoke);flex:1;line-height:1.4;}
+.mpct{font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:700;color:var(--coral);flex-shrink:0;}
+
+/* ── INPUT ── */
+.idock{
+  padding:14px 30px 20px;
+  background:rgba(13,13,13,0.92);
+  backdrop-filter:blur(16px);
+  border-top:1px solid var(--ink4);
+  flex-shrink:0;position:relative;z-index:5;
+}
+
+.ishell{
+  display:flex;gap:9px;align-items:flex-end;
+  background:var(--ink2);
+  border:1px solid var(--ink4);
+  border-radius:13px;
+  padding:3px 3px 3px 16px;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.ishell:focus-within{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(212,168,67,0.08);
+}
+
+#msg{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--paper);
+  font-family:'Outfit',sans-serif;font-size:0.87rem;font-weight:300;
+  padding:11px 0;resize:none;
+  min-height:44px;max-height:136px;line-height:1.6;
+}
+#msg::placeholder{color:var(--dim);font-style:italic;}
+
+.gobtn{
+  width:42px;height:42px;border-radius:9px;border:none;
+  background:linear-gradient(135deg,var(--gold),var(--coral));
+  color:#000;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;flex-shrink:0;
+  box-shadow:0 3px 12px rgba(212,168,67,0.28);
+}
+.gobtn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(212,168,67,0.42);}
+.gobtn:active{transform:translateY(0);}
+.gobtn:disabled{opacity:0.3;cursor:not-allowed;transform:none;box-shadow:none;}
+
+.ifoot{display:flex;justify-content:space-between;margin-top:7px;padding:0 3px;}
+.ihint{font-family:'Inconsolata',monospace;font-size:0.56rem;color:var(--dim);letter-spacing:0.07em;}
+.icc  {font-family:'Inconsolata',monospace;font-size:0.56rem;color:var(--dim);}
 </style>
 </head>
 <body>
+<div class="shell">
 
-<div class="app">
-
-  <!-- ── Sidebar ── -->
-  <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-icon">✦</div>
-      Naqvi's
+  <!-- ═══ SPINE ═══ -->
+  <nav class="spine">
+    <div class="spine-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        <line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/>
+      </svg>
     </div>
-    <div class="logo-sub">AI Writing Assistant</div>
+    <div class="spine-dot on"  data-m="paraphrase"  onclick="go('paraphrase')"  title="Paraphrase"></div>
+    <div class="spine-dot"     data-m="generate"    onclick="go('generate')"    title="Generate"></div>
+    <div class="spine-dot"     data-m="tone"        onclick="go('tone')"        title="Tone Adjust"></div>
+    <div class="spine-dot"     data-m="plagiarism"  onclick="go('plagiarism')"  title="Plagiarism"></div>
+    <div class="spine-label">Lingua · Bot</div>
+  </nav>
 
-    <div class="sidebar-section">Features</div>
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-name">LinguaBot</div>
+      <div class="sb-sub">AI Writing Studio · v2.0</div>
+    </div>
 
-    <button class="mode-btn active" data-mode="paraphrase" onclick="setMode('paraphrase')">
-      <div class="mode-icon">↺</div>
-      Paraphrase
+    <div class="sb-cat">Features</div>
+
+    <button class="nb on" data-m="paraphrase" onclick="go('paraphrase')">
+      <div class="ni">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+      </div>
+      <span class="nl">Paraphrase</span>
+      <span class="na">›</span>
     </button>
 
-    <button class="mode-btn" data-mode="generate" onclick="setMode('generate')">
-      <div class="mode-icon">✦</div>
-      Generate
+    <button class="nb" data-m="generate" onclick="go('generate')">
+      <div class="ni">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span class="nl">Generate</span>
+      <span class="na">›</span>
     </button>
 
-    <button class="mode-btn" data-mode="tone" onclick="setMode('tone')">
-      <div class="mode-icon">◈</div>
-      Tone Adjust
+    <button class="nb" data-m="tone" onclick="go('tone')">
+      <div class="ni">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+      </div>
+      <span class="nl">Tone Adjust</span>
+      <span class="na">›</span>
     </button>
 
-    <button class="mode-btn" data-mode="plagiarism" onclick="setMode('plagiarism')">
-      <div class="mode-icon">⊛</div>
-      Plagiarism Check
+    <button class="nb" data-m="plagiarism" onclick="go('plagiarism')">
+      <div class="ni">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <span class="nl">Plagiarism Check</span>
+      <span class="na">›</span>
     </button>
 
-    <div class="sidebar-footer">
-      LinguaBot v1.0<br>
-      Powered by Python NLP<br>
-      No external APIs used
+    <div class="sb-cat" style="margin-top:8px">Session</div>
+    <div class="sb-foot">
+      <div class="sf-title">Activity</div>
+      <div class="sf-row">
+        <span class="sf-key">Messages sent</span>
+        <span class="sf-val" id="mc">0</span>
+      </div>
+      <div class="sf-bar"><div class="sf-fill" id="mb"></div></div>
+      <div class="sf-row">
+        <span class="sf-key">Active mode</span>
+        <span class="sf-val" id="ms" style="font-size:0.7rem;color:var(--gold)">PARAPHRASE</span>
+      </div>
     </div>
   </aside>
 
-  <!-- ── Main ── -->
+  <!-- ═══ MAIN ═══ -->
   <main class="main">
+    <div class="blob blob-a"></div>
+    <div class="blob blob-b"></div>
 
-    <div class="header" id="mode-header">
-      <div class="header-icon" id="header-icon" style="background:rgba(124,106,247,0.15);color:var(--accent)">↺</div>
-      <div>
-        <div class="header-title" id="header-title">Paraphrasing</div>
-        <div class="header-desc" id="header-desc">Rewrite text while preserving meaning</div>
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="tb-icon" id="tbi" style="background:rgba(212,168,67,0.15);color:var(--gold)">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
       </div>
-      <div class="mode-badge" id="mode-badge" style="color:var(--accent);border-color:rgba(124,106,247,0.3)">PARAPHRASE</div>
+      <div class="tb-info">
+        <div class="tb-title" id="tbt">Paraphrasing</div>
+        <div class="tb-desc"  id="tbd">Rewrite text while preserving meaning</div>
+      </div>
+      <div class="tb-badge" id="tbp" style="color:var(--gold);border-color:rgba(212,168,67,0.4)">PARAPHRASE</div>
     </div>
 
-    <div class="chat-area" id="chat-area">
-      <div class="welcome" id="welcome-screen">
-        <div class="welcome-orb">✦</div>
-        <h2>Hello, Writer.</h2>
-        <p>Choose a feature from the sidebar and start typing. I'll paraphrase, generate, adjust tone, or check plagiarism for you.</p>
-        <div class="welcome-chips">
-          <span class="chip" onclick="quickPrompt('Paraphrase: Technology has changed the world dramatically over the past decade.')">↺ Try Paraphrase</span>
-          <span class="chip" onclick="quickPrompt('Generate a paragraph about artificial intelligence.')">✦ Try Generate</span>
-          <span class="chip" onclick="quickPrompt('Make this formal: Hey, can you help me fix this?')">◈ Try Tone</span>
-          <span class="chip" onclick="quickPrompt('Check: Knowledge is power.')">⊛ Try Plagiarism</span>
+    <!-- Tone selector -->
+    <div class="tonebar" id="tonebar">
+      <span class="tone-lbl">Tone —</span>
+      <button class="tp on" data-t="formal"       onclick="st('formal')">Formal</button>
+      <button class="tp"    data-t="casual"        onclick="st('casual')">Casual</button>
+      <button class="tp"    data-t="professional"  onclick="st('professional')">Professional</button>
+      <button class="tp"    data-t="academic"      onclick="st('academic')">Academic</button>
+      <button class="tp"    data-t="empathetic"    onclick="st('empathetic')">Empathetic</button>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat" id="chat">
+      <div class="welcome" id="wel">
+        <div class="w-orb">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/>
+          </svg>
+        </div>
+        <div class="w-h">Hello, Writer.</div>
+        <div class="w-p">Pick a tool and start crafting. I'll paraphrase, generate paragraphs, adjust tone, or check for plagiarism.</div>
+        <div class="w-grid">
+          <div class="wcard" data-m="paraphrase" onclick="qs('paraphrase','Technology has changed the world dramatically over the past decade.')">
+            <div class="wci"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+            <div><div class="wct">Paraphrase</div><div class="wch">Rewrite any sentence differently</div></div>
+          </div>
+          <div class="wcard" data-m="generate" onclick="qs('generate','artificial intelligence and the future')">
+            <div class="wci"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+            <div><div class="wct">Generate</div><div class="wch">Write a paragraph on any topic</div></div>
+          </div>
+          <div class="wcard" data-m="tone" onclick="qs('tone','Hey can you help me fix this thing real quick?')">
+            <div class="wci"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></div>
+            <div><div class="wct">Tone Adjust</div><div class="wch">Switch formal, casual, academic…</div></div>
+          </div>
+          <div class="wcard" data-m="plagiarism" onclick="qs('plagiarism','Knowledge is power and actions speak louder than words.')">
+            <div class="wci"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+            <div><div class="wct">Plagiarism</div><div class="wch">Check content originality score</div></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="input-area">
-      <div class="tone-selector" id="tone-selector">
-        <span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text-dim);align-self:center;letter-spacing:0.1em;">TONE:</span>
-        <button class="tone-pill active" data-tone="formal" onclick="setTone('formal')">Formal</button>
-        <button class="tone-pill" data-tone="casual" onclick="setTone('casual')">Casual</button>
-        <button class="tone-pill" data-tone="professional" onclick="setTone('professional')">Professional</button>
+    <!-- Input dock -->
+    <div class="idock">
+      <div class="ishell">
+        <textarea id="msg" placeholder="Type your message…" rows="1"
+          onkeydown="onK(event)" oninput="rsz(this);cc()"></textarea>
+        <button class="gobtn" id="gobtn" onclick="send()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
       </div>
-
-      <div class="input-row">
-        <div class="input-wrap">
-          <textarea id="chat-input" placeholder="Type your message here…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        </div>
-        <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+      <div class="ifoot">
+        <span class="ihint" id="ih">↵ Send · Shift+↵ New line</span>
+        <span class="icc"   id="icc">0 chars</span>
       </div>
-      <div class="input-hint" id="input-hint">Enter to send · Shift+Enter for new line</div>
     </div>
-
   </main>
 </div>
 
 <script>
-  let currentMode = 'paraphrase';
-  let currentTone = 'formal';
-  let isLoading = false;
+const ICO = {
+  paraphrase:`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
+  generate:  `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+  tone:      `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>`,
+  plagiarism:`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  bot: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>`,
+  user:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+};
 
-  const modeConfig = {
-    paraphrase: {
-      icon: '↺',
-      iconBg: 'rgba(124,106,247,0.15)',
-      iconColor: 'var(--accent)',
-      title: 'Paraphrasing',
-      desc: 'Rewrite text while preserving meaning',
-      badge: 'PARAPHRASE',
-      badgeColor: 'var(--accent)',
-      badgeBorder: 'rgba(124,106,247,0.3)',
-      hint: 'Type or paste any text to paraphrase it',
-    },
-    generate: {
-      icon: '✦',
-      iconBg: 'rgba(94,207,177,0.15)',
-      iconColor: 'var(--accent3)',
-      title: 'Paragraph Generation',
-      desc: 'Generate rich paragraphs from any topic',
-      badge: 'GENERATE',
-      badgeColor: 'var(--accent3)',
-      badgeBorder: 'rgba(94,207,177,0.3)',
-      hint: 'Enter a topic (e.g. "climate change" or "artificial intelligence")',
-    },
-    tone: {
-      icon: '◈',
-      iconBg: 'rgba(232,169,107,0.15)',
-      iconColor: 'var(--accent2)',
-      title: 'Tone Adjustment',
-      desc: 'Rewrite text with a different tone',
-      badge: 'TONE',
-      badgeColor: 'var(--accent2)',
-      badgeBorder: 'rgba(232,169,107,0.3)',
-      hint: 'Select a tone above, then type your text to adjust',
-    },
-    plagiarism: {
-      icon: '⊛',
-      iconBg: 'rgba(232,107,143,0.15)',
-      iconColor: 'var(--accent4)',
-      title: 'Plagiarism Check',
-      desc: 'Evaluate content for potential plagiarism',
-      badge: 'PLAGIARISM',
-      badgeColor: 'var(--accent4)',
-      badgeBorder: 'rgba(232,107,143,0.3)',
-      hint: 'Paste any text to check for plagiarism',
-    },
-  };
+const CFG = {
+  paraphrase:{title:'Paraphrasing',   desc:'Rewrite text while preserving meaning',       badge:'PARAPHRASE', col:'var(--gold)',     ib:'rgba(212,168,67,0.15)', br:'rgba(212,168,67,0.4)',  hint:'Paste any text to paraphrase it',             ph:'Paste your text here to paraphrase…'},
+  generate:  {title:'Paragraph Gen.', desc:'Generate rich paragraphs from any topic',      badge:'GENERATE',   col:'var(--mint)',     ib:'rgba(0,232,176,0.15)',  br:'rgba(0,232,176,0.4)',   hint:'Enter a topic like "climate change"',          ph:'Enter a topic to generate a paragraph…'},
+  tone:      {title:'Tone Adjust',    desc:'Rewrite text with a different voice',          badge:'TONE',       col:'var(--coral)',    ib:'rgba(255,79,94,0.15)',  br:'rgba(255,79,94,0.4)',   hint:'Select a tone above, then type your text',    ph:'Type or paste text to adjust its tone…'},
+  plagiarism:{title:'Plagiarism',     desc:'Evaluate originality of any content',          badge:'PLAGIARISM', col:'var(--lavender)', ib:'rgba(176,136,249,0.15)',br:'rgba(176,136,249,0.4)', hint:'Paste any text to check for plagiarism',      ph:'Paste text here to check for plagiarism…'},
+};
 
-  function setMode(mode) {
-    currentMode = mode;
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+const BLOB = {paraphrase:'rgba(212,168,67,0.07)',generate:'rgba(0,232,176,0.07)',tone:'rgba(255,79,94,0.07)',plagiarism:'rgba(176,136,249,0.07)'};
 
-    const cfg = modeConfig[mode];
-    const hi = document.getElementById('header-icon');
-    hi.textContent = cfg.icon;
-    hi.style.background = cfg.iconBg;
-    hi.style.color = cfg.iconColor;
-    document.getElementById('header-title').textContent = cfg.title;
-    document.getElementById('header-desc').textContent = cfg.desc;
-    const mb = document.getElementById('mode-badge');
-    mb.textContent = cfg.badge;
-    mb.style.color = cfg.badgeColor;
-    mb.style.borderColor = cfg.badgeBorder;
-    document.getElementById('input-hint').textContent = cfg.hint;
+let mode='paraphrase', tone='formal', busy=false, msgs=0;
 
-    const ts = document.getElementById('tone-selector');
-    ts.classList.toggle('visible', mode === 'tone');
+function go(m){
+  mode=m;
+  const c=CFG[m];
+  // sidebar nav
+  document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  // spine
+  document.querySelectorAll('.spine-dot').forEach(d=>d.classList.toggle('on',d.dataset.m===m));
+  // topbar
+  const i=document.getElementById('tbi');
+  i.innerHTML=ICO[m]; i.style.background=c.ib; i.style.color=c.col;
+  document.getElementById('tbt').textContent=c.title;
+  document.getElementById('tbd').textContent=c.desc;
+  const p=document.getElementById('tbp');
+  p.textContent=c.badge; p.style.color=c.col; p.style.borderColor=c.br;
+  // tone bar
+  document.getElementById('tonebar').classList.toggle('on',m==='tone');
+  // input
+  document.getElementById('msg').placeholder=c.ph;
+  document.getElementById('ih').textContent=c.hint;
+  // stat
+  const ms=document.getElementById('ms');
+  ms.textContent=c.badge; ms.style.color=c.col;
+  // ambient blob
+  document.querySelector('.blob-a').style.background=`radial-gradient(circle,${BLOB[m]},transparent 70%)`;
+}
 
-    const placeholders = {
-      paraphrase: 'Paste your text here to paraphrase…',
-      generate: 'Enter a topic to generate a paragraph…',
-      tone: 'Type or paste text to adjust its tone…',
-      plagiarism: 'Paste text here to check for plagiarism…',
-    };
-    document.getElementById('chat-input').placeholder = placeholders[mode];
+function st(t){
+  tone=t;
+  document.querySelectorAll('.tp').forEach(p=>p.classList.toggle('on',p.dataset.t===t));
+}
+
+function rsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,136)+'px';}
+function cc(){document.getElementById('icc').textContent=document.getElementById('msg').value.length+' chars';}
+function onK(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+
+function qs(m,text){
+  go(m);
+  document.getElementById('wel')?.remove();
+  const inp=document.getElementById('msg');
+  inp.value=text; rsz(inp); cc(); inp.focus();
+}
+
+function addRow(role,content,isHTML=false){
+  document.getElementById('wel')?.remove();
+  const row=document.createElement('div');
+  row.className='row '+role;
+  const av=document.createElement('div');
+  av.className='av '+role;
+  av.innerHTML=role==='bot'?ICO.bot:ICO.user;
+  const bub=document.createElement('div');
+  bub.className='bub '+role;
+  if(role==='bot'){
+    const tag=document.createElement('div');
+    tag.className='btag';
+    tag.style.color=CFG[mode].col;
+    tag.textContent=CFG[mode].badge;
+    bub.appendChild(tag);
   }
-
-  function setTone(tone) {
-    currentTone = tone;
-    document.querySelectorAll('.tone-pill').forEach(p => {
-      p.classList.toggle('active', p.dataset.tone === tone);
-    });
+  const txt=document.createElement('div');
+  txt.className='btxt';
+  if(isHTML) txt.innerHTML=content; else txt.textContent=content;
+  bub.appendChild(txt);
+  if(role==='bot'){
+    const cp=document.createElement('button');
+    cp.className='cpbtn'; cp.textContent='copy';
+    cp.onclick=()=>{ navigator.clipboard.writeText(txt.innerText||txt.textContent).then(()=>{ cp.textContent='copied!'; setTimeout(()=>cp.textContent='copy',1500); }); };
+    bub.appendChild(cp);
   }
-
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  row.appendChild(av); row.appendChild(bub);
+  const chat=document.getElementById('chat');
+  chat.appendChild(row);
+  chat.scrollTop=chat.scrollHeight;
+  if(role==='user'){
+    msgs++;
+    document.getElementById('mc').textContent=msgs;
+    document.getElementById('mb').style.width=Math.min(msgs*10,100)+'%';
   }
+}
 
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
+function showTyping(){
+  document.getElementById('wel')?.remove();
+  const row=document.createElement('div');
+  row.id='tdrow'; row.className='row bot';
+  const av=document.createElement('div'); av.className='av bot'; av.innerHTML=ICO.bot;
+  const bub=document.createElement('div'); bub.className='bub bot';
+  bub.innerHTML='<div class="tdots"><span></span><span></span><span></span></div>';
+  row.appendChild(av); row.appendChild(bub);
+  const chat=document.getElementById('chat');
+  chat.appendChild(row); chat.scrollTop=chat.scrollHeight;
+  return row;
+}
 
-  function quickPrompt(text) {
-    document.getElementById('welcome-screen')?.remove();
-    const inp = document.getElementById('chat-input');
-    inp.value = text;
-    autoResize(inp);
-    inp.focus();
-  }
-
-  function addBubble(role, content, isHtml = false) {
-    document.getElementById('welcome-screen')?.remove();
-
-    const row = document.createElement('div');
-    row.className = `bubble-row ${role}`;
-
-    const avatar = document.createElement('div');
-    avatar.className = `avatar ${role}`;
-    avatar.textContent = role === 'bot' ? '✦' : 'U';
-
-    const bubble = document.createElement('div');
-    bubble.className = `bubble ${role}`;
-
-    if (role === 'bot') {
-      const label = document.createElement('div');
-      label.className = 'bubble-label';
-      label.textContent = modeConfig[currentMode].badge;
-      bubble.appendChild(label);
-    }
-
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'bubble-content';
-    if (isHtml) {
-      contentDiv.innerHTML = content;
-    } else {
-      contentDiv.textContent = content;
-    }
-    bubble.appendChild(contentDiv);
-
-    if (role === 'bot') {
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'copy-btn';
-      copyBtn.textContent = 'copy';
-      copyBtn.onclick = () => {
-        const text = contentDiv.innerText || contentDiv.textContent;
-        navigator.clipboard.writeText(text).then(() => {
-          copyBtn.textContent = 'copied!';
-          setTimeout(() => copyBtn.textContent = 'copy', 1500);
-        });
-      };
-      bubble.appendChild(copyBtn);
-    }
-
-    row.appendChild(avatar);
-    row.appendChild(bubble);
-
-    const chatArea = document.getElementById('chat-area');
-    chatArea.appendChild(row);
-    chatArea.scrollTop = chatArea.scrollHeight;
-    return bubble;
-  }
-
-  function addTyping() {
-    document.getElementById('welcome-screen')?.remove();
-    const row = document.createElement('div');
-    row.className = 'bubble-row bot';
-    row.id = 'typing-row';
-
-    const avatar = document.createElement('div');
-    avatar.className = 'avatar bot';
-    avatar.textContent = '✦';
-
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble bot';
-    bubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
-
-    row.appendChild(avatar);
-    row.appendChild(bubble);
-    document.getElementById('chat-area').appendChild(row);
-    document.getElementById('chat-area').scrollTop = 9999;
-    return row;
-  }
-
-  function buildPlagiarismHtml(data) {
-    const riskClass = { None: 'risk-green', Low: 'risk-yellow', Moderate: 'risk-orange', High: 'risk-red' }[data.risk] || 'risk-green';
-
-    let matchesHtml = '';
-    if (data.matches && data.matches.length > 0) {
-      matchesHtml = `<div style="margin-top:8px">
-        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Similar Sources</div>
-        <div class="matches-list">
-          ${data.matches.map(m => `
-            <div class="match-item">
-              <div class="match-text">${m.source}</div>
-              <div class="match-sim">${m.similarity}%</div>
-            </div>`).join('')}
-        </div>
-      </div>`;
-    }
-
-    return `<div class="plag-card">
-      <div class="plag-header">
-        <span>Analysis Result</span>
-        <span class="plag-risk ${riskClass}">${data.risk} Risk</span>
+function plagHTML(d){
+  const rc={None:'rg',Low:'ry',Moderate:'ro',High:'rr'}[d.risk]||'rg';
+  const matches=(d.matches||[]).map(m=>`<div class="mrow"><div class="msrc">${m.source}</div><div class="mpct">${m.similarity}%</div></div>`).join('');
+  return `<div class="pc">
+    <div class="pc-head">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Originality Report
+      <span class="pc-badge ${rc}">${d.risk} Risk</span>
+    </div>
+    <div class="pc-body">
+      <div class="pc-sum">${d.summary}</div>
+      <div class="pc-metrics">
+        <div class="met"><div class="mv">${d.originality_score}%</div><div class="ml">Originality</div><div class="pbar"><div class="pfill" style="width:${d.originality_score}%"></div></div></div>
+        <div class="met"><div class="mv">${d.word_count}</div><div class="ml">Words</div></div>
+        <div class="met"><div class="mv">${d.unique_words}</div><div class="ml">Unique</div></div>
       </div>
-      <div class="plag-body">
-        <div class="plag-summary">${data.summary}</div>
-        <div class="plag-stats">
-          <div class="stat-box">
-            <div class="stat-value">${data.originality_score}%</div>
-            <div class="stat-label">Originality</div>
-            <div class="originality-bar"><div class="originality-fill" style="width:${data.originality_score}%"></div></div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-value">${data.word_count}</div>
-            <div class="stat-label">Words</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-value">${data.unique_words}</div>
-            <div class="stat-label">Unique Words</div>
-          </div>
-        </div>
-        ${matchesHtml}
-      </div>
-    </div>`;
+      ${matches?`<div><div style="font-family:'Inconsolata',monospace;font-size:0.58rem;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px">Similar Sources</div><div class="mlist">${matches}</div></div>`:''}
+    </div>
+  </div>`;
+}
+
+async function send(){
+  if(busy)return;
+  const inp=document.getElementById('msg');
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value=''; inp.style.height='auto';
+  document.getElementById('icc').textContent='0 chars';
+  addRow('user',text);
+  busy=true;
+  document.getElementById('gobtn').disabled=true;
+  const tr=showTyping();
+  try{
+    const map={paraphrase:'/api/paraphrase',generate:'/api/generate',tone:'/api/tone',plagiarism:'/api/plagiarism'};
+    const body=mode==='generate'?{topic:text}:mode==='tone'?{text,tone}:{text};
+    const res=await fetch(map[mode],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    tr.remove();
+    if(data.error) addRow('bot','⚠️ '+data.error);
+    else if(mode==='plagiarism') addRow('bot',plagHTML(data),true);
+    else addRow('bot',data.result);
+  }catch(e){
+    tr.remove();
+    addRow('bot','⚠️ Connection error — make sure Python server is running on port 5000.');
   }
-
-  async function sendMessage() {
-    if (isLoading) return;
-    const inp = document.getElementById('chat-input');
-    const text = inp.value.trim();
-    if (!text) return;
-
-    inp.value = '';
-    inp.style.height = 'auto';
-    addBubble('user', text);
-
-    isLoading = true;
-    document.getElementById('send-btn').disabled = true;
-
-    const typingRow = addTyping();
-
-    try {
-      let url, body;
-
-      if (currentMode === 'paraphrase') {
-        url = '/api/paraphrase';
-        body = { text };
-      } else if (currentMode === 'generate') {
-        url = '/api/generate';
-        body = { topic: text };
-      } else if (currentMode === 'tone') {
-        url = '/api/tone';
-        body = { text, tone: currentTone };
-      } else if (currentMode === 'plagiarism') {
-        url = '/api/plagiarism';
-        body = { text };
-      }
-
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const data = await res.json();
-      typingRow.remove();
-
-      if (data.error) {
-        addBubble('bot', `⚠ ${data.error}`);
-      } else if (currentMode === 'plagiarism') {
-        const htmlContent = buildPlagiarismHtml(data);
-        addBubble('bot', htmlContent, true);
-      } else {
-        addBubble('bot', data.result);
-      }
-    } catch (err) {
-      typingRow.remove();
-      addBubble('bot', '⚠ Connection error. Make sure the Python server is running on port 5000.');
-    }
-
-    isLoading = false;
-    document.getElementById('send-btn').disabled = false;
-    inp.focus();
-  }
+  busy=false;
+  document.getElementById('gobtn').disabled=false;
+  inp.focus();
+}
 </script>
 </body>
 </html>
